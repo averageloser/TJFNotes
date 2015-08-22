@@ -5,7 +5,9 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -18,7 +20,7 @@ import com.averageloser.tjfnotes.R;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NoteListFragment extends ListFragment implements AdapterView.OnItemLongClickListener {
+public class NoteListFragment extends ListFragment {
     public interface NotesListFragmentListener {
         void onReadyForNotes();
         void onNoteClicked(Note note);
@@ -99,12 +101,14 @@ public class NoteListFragment extends ListFragment implements AdapterView.OnItem
     }
 
     @Override
-    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-        notesListener.onRequestNoteDelete(notesList.get(position));
-
-        return true;
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
     }
 
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        return super.onContextItemSelected(item);
+    }
 
     public void newNoteButton(View v) {
         //Here I call back to the activity to tell it that a user wants to add a new note.
@@ -113,9 +117,16 @@ public class NoteListFragment extends ListFragment implements AdapterView.OnItem
         fabListener.onFabClicked();
     }
 
+    public void addNote(Note note) {
+        //called by the activity when in dual pane mode to add a note to the list, instead of having to download them all again.
+        notesList.add(note);
+
+        noteAdapter.notifyDataSetChanged();
+    }
     //Called by activity to remove note from list of notes and update adapter.
     public void removeNote(Note note) {
         notesList.remove(note);
+
         noteAdapter.notifyDataSetChanged();
     }
 

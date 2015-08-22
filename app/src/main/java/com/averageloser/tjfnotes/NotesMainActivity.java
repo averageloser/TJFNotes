@@ -74,11 +74,15 @@ public class NotesMainActivity extends AppCompatActivity implements NotesModel.N
         switch (item.getItemId()) {
             case R.id.save:
                 //dont to anything, unless a user is adding note details.
-                if (noteDetailFragment.isVisible() && noteDetailFragment != null) {
+                if (noteDetailFragment.isVisible()) {
                     //if the note detail fragment is visible, i can check for data.
                     if (!noteDetailFragment.getTitle().isEmpty()) {
                         //the user has to at least type in something for a  title, save a note..
                         model.saveNote(noteDetailFragment.getTitle(), noteDetailFragment.getBody());
+
+                        if (!dualPane) {
+                            getSupportFragmentManager().popBackStack();
+                        }
                     }
                 }
 
@@ -101,7 +105,7 @@ public class NotesMainActivity extends AppCompatActivity implements NotesModel.N
             noteDetailFragment.setBody("");
         } else {
             getSupportFragmentManager().beginTransaction().replace(R.id.main_container, noteDetailFragment)
-                    .addToBackStack(null).commit();
+                    .addToBackStack("details").commit();
         }
     }
 
@@ -119,6 +123,11 @@ public class NotesMainActivity extends AppCompatActivity implements NotesModel.N
     @Override
     public void onNoteSaved(Note note) {
         Toast.makeText(this, "Note saved", Toast.LENGTH_LONG).show();
+
+        if (dualPane) {
+            //add the note to the list of notes maintained by the listfragment.
+            noteListFragment.addNote(note);
+        }
     }
 
     @Override
