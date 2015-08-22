@@ -16,6 +16,7 @@ import java.util.List;
 
 /**
  * Created by tj on 8/20/15.
+ *
  */
 public class NotesModel {
     public interface NotesModelListener {
@@ -47,7 +48,9 @@ public class NotesModel {
     public void saveNote(final String title, final String body) {
         final Note note = new Note(title, body);
 
-        final ParseObject parseNote = new ParseObject(CLASSNAME);
+        Log.i("Model: saveNote()", "called");
+
+        final ParseObject parseNote = new ParseObject("Note");
         parseNote.put("title", note.getTitle());
         parseNote.put("body", note.getBody());
         parseNote.saveInBackground(new SaveCallback() {
@@ -71,6 +74,8 @@ public class NotesModel {
 
     //Find note by id and delete it from parse, then notify listeners.
     public void deleteNote(final Note note) {
+        Log.i("Model: deleteNote()", "called");
+
         ParseQuery<ParseObject> objQuery = ParseQuery.getQuery(CLASSNAME);
         objQuery.getInBackground(note.getId(), new GetCallback<ParseObject>() {
             @Override
@@ -99,6 +104,8 @@ public class NotesModel {
     }
 
     public void editNote(final Note note, final String title, final String body) {
+        Log.i("Model: editNote()", "called");
+
         //Get note by id.
         ParseQuery<ParseObject> query = ParseQuery.getQuery(CLASSNAME);
         // Retrieve the object by id
@@ -142,6 +149,8 @@ public class NotesModel {
     }
 
     public void getAllNotes() {
+        Log.i("Model: getAllNotes()", "called");
+
         ParseQuery<ParseObject> allNotesQuery = ParseQuery.getQuery(CLASSNAME);
         allNotesQuery.findInBackground(new FindCallback<ParseObject>() {
             @Override
@@ -172,6 +181,8 @@ public class NotesModel {
     }
 
     public void deleteAllNotes() {
+        Log.i("Model: deleteAllNotes()", "called");
+
         //first get a list of all parseobjects.
         ParseQuery<ParseObject> all = ParseQuery.getQuery(CLASSNAME);
         all.findInBackground(new FindCallback<ParseObject>() {
