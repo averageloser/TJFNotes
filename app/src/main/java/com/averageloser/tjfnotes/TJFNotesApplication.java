@@ -12,7 +12,6 @@ public class TJFNotesApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
-        Parse.enableLocalDatastore(this);
-        Parse.initialize(this, "KY8vqZRS5hHMHNjPQiEImWTfSwuvrAqq0DyYYuEU", "XnPZi9pos9OD7Gy606e4CVXQ5GDBewtF5E1n07FX");
+        //initialize parse here.
     }
 }
