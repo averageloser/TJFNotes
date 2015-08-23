@@ -1,5 +1,7 @@
 package com.averageloser.tjfnotes;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -10,61 +12,44 @@ import android.widget.Toast;
 
 import com.averageloser.tjfnotes.Model.Note;
 import com.averageloser.tjfnotes.Model.NotesModel;
-import com.averageloser.tjfnotes.UI.NoteDetailFragment;
 import com.averageloser.tjfnotes.UI.NoteListFragment;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Created by tj on 8/21/15.
- * <p/>
+ * <p>
  * The main Activity of the notes application.   This activity will act as a controller for all the
  * fragments.
  */
-public class NotesMainActivity extends AppCompatActivity implements NotesModel.NotesModelListener,
+public class NotesListActivity extends AppCompatActivity implements NotesModel.NotesModelListener,
         NoteListFragment.FloatingActionButtonListener, NoteListFragment.NotesListFragmentListener {
-    private boolean dualPane;
+
+    private static final int DETAIL_REQUEST = 1;
     private NoteListFragment noteListFragment;
-    private NoteDetailFragment noteDetailFragment;
     private NotesModel model;
+    private Note note;  //the note I send to the Details Fragment when someone clicks the list in portrait mode.
+    private boolean noteClicked;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_note_main);
+        setContentView(R.layout.note_list_activity_main);
 
-        //instantiate the list fragment.
-        noteListFragment = new NoteListFragment();
-
-        //instantiate the note detail fragment.
-        noteDetailFragment = new NoteDetailFragment();
+        //instantiate the fragment.
+        noteListFragment = (NoteListFragment) getSupportFragmentManager().findFragmentById(R.id.note_list_fragment);
 
         //The notes model for manipulating notes.
         model = new NotesModel();
         model.addNotesModelListener(this);
-
-        //figure out whether or not we are in dual tablet landscape mode.
-        dualPane = (findViewById(R.id.note_detail_container) != null);
-
-        Log.i("dual pane", String.valueOf(dualPane));
-
-        if (dualPane) {
-            //Add the detail and list Fragments to their containers.
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.note_list_container, noteListFragment)
-                    .add(R.id.note_detail_container, noteDetailFragment, "NDF")
-                    .commit();
-        } else {
-            //I am in single pane, so add the listFragment
-            getSupportFragmentManager().beginTransaction().add(R.id.main_container, noteListFragment).commit();
-        }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu_main, menu);
+        inflater.inflate(R.menu.list_menu_main, menu);
 
         return true;
     }
@@ -72,23 +57,14 @@ public class NotesMainActivity extends AppCompatActivity implements NotesModel.N
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.save:
-                //dont to anything, unless a user is adding note details.
-                if (noteDetailFragment.isVisible()) {
-                    //if the note detail fragment is visible, i can check for data.
-                    if (!noteDetailFragment.getTitle().isEmpty()) {
-                        //the user has to at least type in something for a  title, save a note..
-                        model.saveNote(noteDetailFragment.getTitle(), noteDetailFragment.getBody());
-
-                        if (!dualPane) {
-                            getSupportFragmentManager().popBackStack();
-                        }
-                    }
-                }
+            //case for deleting all notes.
+            case R.id.delete_all:
+                model.deleteAllNotes();
 
                 break;
 
-            //case for deleting all notes.
+            case R.id.refresh:
+                model.getAllNotes();
         }
 
         return super.onOptionsItemSelected(item);
@@ -96,38 +72,16 @@ public class NotesMainActivity extends AppCompatActivity implements NotesModel.N
 
     @Override
     public void onFabClicked() {
-        /*A user wants to add a new note.  If we are in single pane mode, replace the current
-        fragment with the note details fragment, otherwise just save the note.*/
-
-        if (dualPane) {
-            //the notes detail fragment is already in the layout, so clear its data for a new note.
-            noteDetailFragment.setTitle("");
-            noteDetailFragment.setBody("");
-        } else {
-            getSupportFragmentManager().beginTransaction().replace(R.id.main_container, noteDetailFragment)
-                    .addToBackStack("details").commit();
-        }
+        startActivityForResult(new Intent(this, NoteDetailActivity.class), DETAIL_REQUEST);
     }
 
-    @Override
-    public void onBackPressed() {
-        if (dualPane) {
-            //if I am in dual pane mode, just finish the activity because the back stack may hav eentries..
-            finish();
-        }
-
-        super.onBackPressed();
-    }
 
     ///////////////////////////////////start model manipulation callbacks//////////////////////////////
     @Override
     public void onNoteSaved(Note note) {
         Toast.makeText(this, "Note saved", Toast.LENGTH_LONG).show();
 
-        if (dualPane) {
-            //add the note to the list of notes maintained by the listfragment.
-            noteListFragment.addNote(note);
-        }
+        noteListFragment.addNote(note);
     }
 
     @Override
@@ -138,12 +92,16 @@ public class NotesMainActivity extends AppCompatActivity implements NotesModel.N
     @Override
     public void onNoteDeleted(Note note) {
         //A note has been deleted, update the adapter and notify the user.
-
+        noteListFragment.removeNote(note);
     }
 
     @Override
     public void onAllNotesDeleted() {
+        /*All the notes have been deleted, so clear the list fragment of notes as well.  I can just
+        call onAllNotesAcquired with an empty list of notes.
+         */
 
+        onAllNotesAcquired(new ArrayList<Note>());
     }
 
     @Override
@@ -169,9 +127,14 @@ public class NotesMainActivity extends AppCompatActivity implements NotesModel.N
         model.getAllNotes();
     }
 
+    //the user clicked a note in the list.  Start the note details activity and pass the note info.
     @Override
     public void onNoteClicked(Note note) {
+        Intent detailIntent = new Intent(this, NoteDetailActivity.class);
+        detailIntent.putExtra("title", note.getTitle());
+        detailIntent.putExtra("body", note.getBody());
 
+        startActivity(detailIntent);
     }
 
     @Override
@@ -180,4 +143,19 @@ public class NotesMainActivity extends AppCompatActivity implements NotesModel.N
         model.deleteNote(note);
     }
     ////////////////////////////////end NoteListFragmentListener methods///////////////////////////
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode == Activity.RESULT_OK) {
+            //The user is saving a note.  Get the data and save it.
+            String title = data.getStringExtra("title");
+
+            String body = data.getStringExtra("body");
+
+            model.saveNote(title, body);
+        }
+    }
 }

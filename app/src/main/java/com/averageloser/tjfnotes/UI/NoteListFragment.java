@@ -1,6 +1,7 @@
 package com.averageloser.tjfnotes.UI;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ListFragment;
@@ -10,17 +11,19 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import com.averageloser.tjfnotes.Model.Note;
+import com.averageloser.tjfnotes.Model.NoteAdapter;
 import com.averageloser.tjfnotes.R;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class NoteListFragment extends ListFragment {
+public class NoteListFragment extends ListFragment implements AbsListView.OnScrollListener {
     public interface NotesListFragmentListener {
         void onReadyForNotes();
         void onNoteClicked(Note note);
@@ -35,7 +38,7 @@ public class NoteListFragment extends ListFragment {
     private FloatingActionButtonListener fabListener;
     private NotesListFragmentListener notesListener;
     private List<Note> notesList;
-    private ArrayAdapter<Note> noteAdapter;
+    private NoteAdapter noteAdapter;
 
     public NoteListFragment() {
     }
@@ -84,14 +87,19 @@ public class NoteListFragment extends ListFragment {
         notesList = new ArrayList();
 
         //set the adapter for the Notes.
-        noteAdapter = new ArrayAdapter<Note>(getActivity(), R.layout.note_list_row,
-                R.id.note_title_list_row, notesList);
+        noteAdapter = new NoteAdapter(getActivity(),R.layout.note_list_row, notesList);
 
         setListAdapter(noteAdapter);
 
         //inform my activity that I want the list of notes to be loaded.
         notesListener.onReadyForNotes();
+
+        getListView().setOnScrollListener(this);
+
+        //register the listview for a context menu so users can long press to delete notes.
+        registerForContextMenu(getListView());
     }
+
 
     public void onListItemClick(ListView listView, View view, int position, long id) {
         super.onListItemClick(listView, view, position, id);
@@ -103,10 +111,17 @@ public class NoteListFragment extends ListFragment {
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
+
+        getActivity().getMenuInflater().inflate(R.menu.context_menu, menu);
     }
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
+        //Just call back to the activity and deltet this note.
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+
+        notesListener.onRequestNoteDelete(notesList.get(info.position)); //I should just call removeNote() in this class. :)
+
         return super.onContextItemSelected(item);
     }
 
@@ -139,4 +154,22 @@ public class NoteListFragment extends ListFragment {
 
         noteAdapter.notifyDataSetChanged();
     }
+
+    @Override
+    public void onScrollStateChanged(AbsListView view, int scrollState) {
+        switch (scrollState) {
+            case SCROLL_STATE_IDLE:
+                newNoteButton.setVisibility(View.VISIBLE);
+
+                break;
+            case SCROLL_STATE_TOUCH_SCROLL:
+                newNoteButton.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    @Override
+    public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+
+    }
+
 }

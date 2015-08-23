@@ -2,4 +2,5 @@
     <string name="app_name">TJFNotes</string>
     <string name="save">Save</string>
     <string name="empty_info">No notes yet</string>
+    <string name="delete_all">Delete all notes</string>
 </resources>
